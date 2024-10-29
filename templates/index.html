@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App with AI</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            color: #333;
+        }
+
+        #app-container {
+            display: flex;
+            flex: 1;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Left User List Panel */
+        #user-list {
+            width: 250px;
+            background-color: #ffffff;
+            border-right: 1px solid #e6e6e6;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        #user-list h5 {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #007bff;
+        }
+
+        #user-list ul {
+            list-style: none;
+        }
+
+        #user-list li {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            background-color: #f8f8f8;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        #user-list li:hover {
+            background-color: #e6e6e6;
+        }
+
+        /* Middle Chat Panel */
+        #chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+            padding: 20px;
+            overflow: hidden;
+            transition: width 0.3s ease;
+        }
+
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            border: 1px solid #e6e6e6;
+            border-radius: 10px;
+            background-color: #fafafa;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-message {
+            display: flex;
+            align-items: flex-start;
+            max-width: 80%;
+        }
+
+        .chat-message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message {
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            color: #333;
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+
+        .user .message {
+            background-color: #dcf8c6;
+        }
+
+        .other-user .message, .ai .message {
+            background-color: #e1f3ff;
+        }
+
+        /* Profile Icon */
+        .profile-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background-color: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .user .profile-icon {
+            margin-left: 10px;
+            margin-right: 0;
+        }
+
+        /* Input Area */
+        #input-area {
+            display: flex;
+            padding: 10px 0;
+        }
+
+        #message {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        #send {
+            margin-left: 10px;
+            padding: 10px 18px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        #send:hover {
+            background-color: #0056b3;
+        }
+
+        /* Separator */
+        #separator {
+            width: 5px;
+            cursor: col-resize;
+            background-color: #ccc;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Right AI Panel */
+        #ai-area {
+            width: 0;
+            background-color: #ffffff;
+            border-left: 1px solid #e6e6e6;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            overflow-y: auto;
+            transition: width 0.3s ease;
+            min-width: 0;
+            max-width: 600px;
+        }
+
+        /* AI Chat Bounding Box */
+        .ai-message {
+            background-color: #f1f8ff;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #007bff;
+            margin-bottom: 10px;
+            white-space: pre-line; /* Ensures line breaks are displayed */
+        }
+
+        /* Toggle AI Panel Button */
+        #toggle-ai {
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <!-- User List Panel -->
+        <div id="user-list">
+            <h5>Active Users</h5>
+            <ul id="users"></ul>
+        </div>
+
+        <!-- Chat Area -->
+        <div id="chat-area">
+            <div id="chat-container"></div>
+            <div id="input-area">
+                <input id="message" placeholder="Type a message" />
+                <button id="send">Send</button>
+            </div>
+        </div>
+
+        <!-- Separator between chat and AI area -->
+        <div id="separator"></div>
+
+        <!-- AI Panel -->
+        <div id="ai-area">
+            <h5>AI Responses</h5>
+            <div id="ai-responses"></div>
+            <button id="summarize">Summarize Chat</button>
+            <button id="prompt">Ask AI</button>
+        </div>
+        
+        <!-- Toggle AI Button -->
+        <button id="toggle-ai">AI Panel</button>
+    </div>
+
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        let username = '';
+
+        // Prompt for username
+        while (!username) {
+            username = prompt("Please enter your username:");
+        }
+
+        // Send initial connection message
+        socket.emit('send_message', { username: username, message: '' });
+
+        const toggleButton = document.getElementById('toggle-ai');
+        const aiArea = document.getElementById('ai-area');
+        const chatArea = document.getElementById('chat-area');
+        const separator = document.getElementById('separator');
+        const chatContainer = document.getElementById('chat-container');
+        const messageInput = document.getElementById('message');
+        const sendButton = document.getElementById('send');
+        const aiResponses = document.getElementById('ai-responses');
+        const summarizeButton = document.getElementById('summarize');
+        const promptButton = document.getElementById('prompt');
+
+        let isDragging = false;
+
+        // Toggle AI panel visibility
+        toggleButton.addEventListener('click', () => {
+            if (aiArea.style.width === '0px' || aiArea.style.width === '') {
+                aiArea.style.width = '320px';
+                chatArea.style.flex = '1';
+            } else {
+                aiArea.style.width = '0px';
+                chatArea.style.flex = '1 0 auto';
+            }
+        });
+
+        // Handle separator dragging for resizing
+        separator.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            document.body.style.cursor = 'col-resize';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const newChatWidth = e.clientX - chatArea.offsetLeft;
+            const newAiWidth = window.innerWidth - e.clientX - separator.offsetWidth;
+
+            if (newChatWidth > 150 && newAiWidth > 150) {  // Min widths
+                chatArea.style.width = `${newChatWidth}px`;
+                aiArea.style.width = `${newAiWidth}px`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            document.body.style.cursor = 'default';
+        });
+
+        // Send message on button click
+        sendButton.addEventListener('click', () => {
+            const message = messageInput.value.trim();
+            if (message) {
+                socket.emit('send_message', { username: username, message: message });
+                messageInput.value = '';
+            }
+        });
+
+        // Send message on Enter key press
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendButton.click();
+            }
+        });
+
+        // Handle "Summarize Chat" button click
+        summarizeButton.addEventListener('click', () => {
+            socket.emit('summarize_chat', {});
+        });
+
+        // Handle "Ask AI" button click
+        promptButton.addEventListener('click', () => {
+            const question = prompt("Ask the AI a question:");
+            if (question) {
+                socket.emit('ai_prompt', { username: username, question: question });
+            }
+        });
+
+        // Display received messages
+        socket.on('receive_message', (data) => {
+            if (data.user === 'AI') return; // Prevent AI messages from showing in the main chat
+
+            const messageElem = document.createElement('div');
+            messageElem.classList.add('chat-message', data.user === username ? 'user' : 'other-user');
+
+            const profileIcon = document.createElement('div');
+            profileIcon.classList.add('profile-icon');
+            profileIcon.textContent = data.user.slice(0, 2).toUpperCase(); // Initials
+
+            const textElem = document.createElement('div');
+            textElem.classList.add('message');
+            textElem.textContent = data.message;
+
+            messageElem.appendChild(profileIcon);
+            messageElem.appendChild(textElem);
+
+            chatContainer.appendChild(messageElem);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        });
+
+        // Display AI responses only in AI area
+        socket.on('receive_message', (data) => {
+            if (data.user === 'AI') {
+                const aiMessageElem = document.createElement('div');
+                aiMessageElem.classList.add('ai-message'); // Bounding box styling
+                aiMessageElem.textContent = data.message;
+                aiResponses.appendChild(aiMessageElem);
+                aiArea.scrollTop = aiArea.scrollHeight;
+            }
+        });
+
+        // Display active user list
+        socket.on('user_list', (users) => {
+            const userList = document.getElementById('users');
+            userList.innerHTML = '';
+            users.forEach(user => {
+                const li = document.createElement('li');
+                li.textContent = user;
+                userList.appendChild(li);
+            });
+        });
+    </script>
+</body>
+</html>
